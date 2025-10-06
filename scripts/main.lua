@@ -3,6 +3,8 @@ local out = require("scripts.outStrings")
 local c = nuvs.ConsoleColors
 local PCE = nuvs.PrettyConsoleErrors
 
+--fix chunking
+
 local function booleanArg(argVal, argName)
     if (argVal == "true") then
         return true
@@ -12,6 +14,7 @@ local function booleanArg(argVal, argName)
         PCE.output(out["invalid" .. argName])
     end
 end
+
 if #arg < 8 then PCE.output(out.invalidArguments) end
 local info = booleanArg(arg[1], "InfoBool")
 local filePath = arg[2]
@@ -26,12 +29,14 @@ local pixels, width, height, bpp, fileSize = nuvs.BMP.decodeBMP(filePath)
 local function writeFile(outputFileName, newPixels, width, height, info)
     nuvs.BMP.writeBMP("results/" .. outputFileName, newPixels, width, height, 24)
     os.execute("ffmpeg -i results/" ..
-    outputFileName .. " -compression_level 100 results/" .. string.sub(outputFileName, 1, -4) .. "png -y -loglevel quiet")
+        outputFileName ..
+        " -compression_level 100 results/" .. string.sub(outputFileName, 1, -4) .. "png -y -loglevel quiet")
     print("\n" ..
         c.white ..
         "> Successfully wrote file:" .. c.reset .. "\n" .. c.green .. "Name: " .. c.white .. outputFileName .. "\n")
     if info == true then
-        print(out.fileInformation(filePath, sortTolerance, sortBy, rowChunking, colChunking, seamInvert, sortDirection, width, height, bpp, fileSize))
+        print(out.fileInformation(filePath, sortTolerance, sortBy, rowChunking, colChunking, seamInvert, sortDirection,
+            width, height, bpp, fileSize))
     end
 end
 
@@ -41,17 +46,17 @@ local function pixelSort(info, sortTolerance, sortBy, rowChunking, colChunking, 
     local rowChunkPCT = math.floor((rowChunking / 100) * lineLength) -- lineLength / rowChunking
     local colChunkPCT = math.floor((colChunking / 100) * lineLength) -- lineLength / colChunking
     local function sortIndex(sortByStr)
-        if sortByStr == "red" or "r" then
+        if sortByStr == "red" or sortByStr == "r" then
             return 1 -- Red
-        elseif sortByStr == "green" or "gre" or "g" then
+        elseif sortByStr == "green" or sortByStr == "gre" or sortByStr == "g" then
             return 2 -- Green
-        elseif sortByStr == "blue" or "blu" or "b" then
+        elseif sortByStr == "blue" or sortByStr == "blu" or sortByStr == "b" then
             return 3 -- Blue
-        elseif sortByStr == "alpha" or "alp" or "a" then
+        elseif sortByStr == "alpha" or sortByStr == "alp" or sortByStr == "a" then
             return 4 -- Alpha
-        elseif sortByStr == "lum" or "s" or "l" then
+        elseif sortByStr == "lum" or sortByStr == "s" or sortByStr == "l" then
             return 5 -- Luminance
-        elseif sortByStr == "hue" or "h" then
+        elseif sortByStr == "hue" or sortByStr == "h" then
             return 6 -- Hue
         else
             PCE.output(out.invalidSortBy)
@@ -70,18 +75,31 @@ local function pixelSort(info, sortTolerance, sortBy, rowChunking, colChunking, 
             end
         end)
     end
-    local function sortRows()
-        for y = 1, height do
-            local newRowPixels = {}
-            for x = 1, width do
-                local r, g, b, a = table.unpack(pixels[y][x])
-                newRowPixels[x] = { r, g, b, a, nuvs.Color.luminance255(r, g, b), nuvs.Color.RGBtoHue(r, g, b), x }
+    local function wayRe(way)
+        if way == 0 then
+            return height, width
+        else
+            return width, height
+        end
+    end
+    local function sortAxis(way)
+        local axisA, axisB = wayRe(way)
+        for y = 1, axisA do
+            local newAxisPixels = {}
+            for x = 1, axisB do
+                local r, g, b, a
+                if way == 0 then
+                    r, g, b, a = table.unpack(pixels[y][x])
+                else
+                    r, g, b, a = table.unpack(pixels[x][y])
+                end
+                newAxisPixels[x] = { r, g, b, a, nuvs.Color.luminance255(r, g, b), nuvs.Color.RGBtoHue(r, g, b), x }
             end
-            local sortedRowPixels = {}
+            local sortedPixels = {}
             local direction = 1
-            if #newRowPixels > rowChunkPCT then
+            if #newAxisPixels > rowChunkPCT then
                 local sortedChunk = {}
-                for _, pixel in ipairs(newRowPixels) do
+                for _, pixel in ipairs(newAxisPixels) do
                     table.insert(sortedChunk, pixel)
                     if #sortedChunk == rowChunkPCT then
                         if seamInvert then
@@ -90,80 +108,40 @@ local function pixelSort(info, sortTolerance, sortBy, rowChunking, colChunking, 
                         else
                             tComparator(sortedChunk, sortIndex(sortBy), sortTolerance, true)
                         end
-                        for _, px in ipairs(sortedChunk) do table.insert(sortedRowPixels, px) end
+                        for _, px in ipairs(sortedChunk) do table.insert(sortedPixels, px) end
                         sortedChunk = {}
                     end
                 end
                 if #sortedChunk > 0 then
                     tComparator(sortedChunk, sortIndex(sortBy), sortTolerance, true)
-                    for _, px in ipairs(sortedChunk) do table.insert(sortedRowPixels, px) end
+                    for _, px in ipairs(sortedChunk) do table.insert(sortedPixels, px) end
                 end
             else
                 if seamInvert then
-                    tComparator(newRowPixels, sortIndex(sortBy), sortTolerance, false)
+                    tComparator(newAxisPixels, sortIndex(sortBy), sortTolerance, false)
                 else
-                    tComparator(newRowPixels, sortIndex(sortBy), sortTolerance, true)
+                    tComparator(newAxisPixels, sortIndex(sortBy), sortTolerance, true)
                 end
-                for _, px in ipairs(newRowPixels) do table.insert(sortedRowPixels, px) end
+                for _, px in ipairs(newAxisPixels) do table.insert(sortedPixels, px) end
             end
-            newPixels[y] = sortedRowPixels
-        end
-    end
-    local function sortColumns()
-        for x = 1, width do
-            local newColPixels = {}
-            for y = 1, height do
-                local r, g, b, a = table.unpack(pixels[y][x])
-                newColPixels[y] = { r, g, b, a, nuvs.Color.luminance255(r, g, b), nuvs.Color.RGBtoHue(r, g, b), y }
-            end
-            local sortedColPixels = {}
-            local direction = 1
-            if #newColPixels > colChunkPCT then
-                local sortedChunk = {}
-                for _, pixel in ipairs(newColPixels) do
-                    table.insert(sortedChunk, pixel)
-                    if #sortedChunk == colChunkPCT then
-                        if seamInvert then
-                            tComparator(sortedChunk, sortIndex(sortBy), sortTolerance, direction == 1)
-                            direction = -direction
-                        else
-                            tComparator(sortedChunk, sortIndex(sortBy), sortTolerance, true)
-                        end
-                        for _, px in ipairs(sortedChunk) do table.insert(sortedColPixels, px) end
-                        sortedChunk = {}
-                    end
-                end
-                if #sortedChunk > 0 then
-                    tComparator(sortedChunk, sortIndex(sortBy), sortTolerance, true)
-                    for _, px in ipairs(sortedChunk) do table.insert(sortedColPixels, px) end
-                end
+            if way == 0 then
+                newPixels[y] = sortedPixels
             else
-                if seamInvert then
-                    tComparator(newColPixels, sortIndex(sortBy), sortTolerance, false)
-                else
-                    tComparator(newColPixels, sortIndex(sortBy), sortTolerance, true)
+                for x = 1, axisB do
+                    newPixels[x] = newPixels[x] or {}
+                    newPixels[x][y] = sortedPixels[x]
                 end
-                for _, px in ipairs(newColPixels) do table.insert(sortedColPixels, px) end
-            end
-            for y = 1, height do
-                newPixels[y] = newPixels[y] or {}
-                newPixels[y][x] = sortedColPixels[y]
             end
         end
     end
-    local function sortBoth()
-        sortRows()
+    if sortDirection == 0 or sortDirection == 1 then
+        sortAxis(sortDirection)
+    elseif sortDirection == 2 then
+        sortAxis(0)
         local tempPixels = newPixels
         newPixels = {}
         pixels = tempPixels
-        sortColumns()
-    end
-    if sortDirection == 0 then
-        sortRows()
-    elseif sortDirection == 1 then
-        sortColumns()
-    elseif sortDirection == 2 then
-        sortBoth()
+        sortAxis(1)
     else
         PCE.output(out.invalidSortDirection)
     end
