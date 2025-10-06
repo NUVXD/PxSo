@@ -1,2 +1,2 @@
 # PxRe
-random pixel sorter
+pixel sorter
