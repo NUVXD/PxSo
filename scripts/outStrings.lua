@@ -1,4 +1,4 @@
-local nuvs = require("libs.NuvsModules")
+local nuvs = require("modules.NuvsModules")
 local c = nuvs.ConsoleColors
 local outStrings = {}
 

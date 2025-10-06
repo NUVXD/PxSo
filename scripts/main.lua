@@ -1,4 +1,4 @@
-local nuvs = require("libs.NuvsModules")
+local nuvs = require("modules.NuvsModules")
 local out = require("scripts.outStrings")
 local c = nuvs.ConsoleColors
 local PCE = nuvs.PrettyConsoleErrors
