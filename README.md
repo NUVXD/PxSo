@@ -1,2 +1,2 @@
-# PxRe
+# PxSo
 pixel sorter
