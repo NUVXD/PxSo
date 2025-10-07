@@ -1,36 +1,37 @@
-local nuvs = require("modules.NuvsModules")
+local nuvs = require("modules.nuvs")
+local PCE = nuvs.PrettyConsoleErrors
 local c = nuvs.ConsoleColors
-local outStrings = {}
+local strings = {}
 
-outStrings.invalidInfoBool = { {
+strings.invalidInfoBool = { {
     "%sError: %sinfo argument must be 'true' or 'false'%s",
     { c.red, c.white, c.reset }
 } }
-outStrings.invalidArguments = { {
+strings.invalidArguments = { {
     "%sWarning: %sYour command must have at least 7 arguments%s",
     { c.green, c.white, c.reset }
 }, {
     "%sUsage: %slua main.lua %s<info: true/false> <input file> <sort tolerance> <sort by> <#row chunks> <#col chunks> <seam invert: true/false> <sort direction>%s",
     { c.green, c.reset, c.grey, c.reset }
 } }
-outStrings.invalidSeamInvert = { {
+strings.invalidSeamInvert = { {
     "%sError: %sseamInvert argument must be 'true' or 'false'%s",
     { c.red, c.white, c.reset }
 } }
-outStrings.invalidSortBy = { {
+strings.invalidSortBy = { {
     "%sError: %ssortBy argument must be one of the following: red, green, blue, alpha, lum, hue%s",
     { c.red, c.white, c.reset }
 } }
-outStrings.invalidSortDirection = { {
+strings.invalidSortDirection = { {
     "%sError: %ssortDirection argument must be %s0%s (rows), %s1%s (columns), or %s2%s (both)%s",
     { c.red, c.white, c.green, c.white, c.green, c.white, c.green, c.white, c.reset }
 } }
-outStrings.invalidFile = { {
+strings.invalidFile = { {
     "%sError: %sThe specified file could not be found or is not a valid BMP file%s",
     { c.red, c.white, c.reset }
 } }
 ----------------------------------
-outStrings.fileInformation = function(filePath, sortTolerance, sortBy, rowChunks, colChunks, seamInvert,
+strings.fileInformation = function(filePath, sortTolerance, sortBy, rowChunks, colChunks, seamInvert,
                                       sortDirection, width, height, bpp, fileSize)
     return (
         c.white .. "> Information:\n"
@@ -46,7 +47,7 @@ outStrings.fileInformation = function(filePath, sortTolerance, sortBy, rowChunks
         .. c.green .. "File size: " .. c.white .. fileSize .. " bytes (" .. string.sub(tostring(fileSize / 1000000), 1, 4) .. "MB)" .. c.reset .. "\n"
     )
 end
-outStrings.fileInformationTxt = function(filePath, sortTolerance, sortBy, rowChunks, colChunks, seamInvert,
+strings.fileInformationTxt = function(filePath, sortTolerance, sortBy, rowChunks, colChunks, seamInvert,
                                          sortDirection, width, height, bpp, fileSize)
     return (
         "> Information:\n"
@@ -62,5 +63,22 @@ outStrings.fileInformationTxt = function(filePath, sortTolerance, sortBy, rowChu
         .. "File size: " .. fileSize .. " bytes (" .. string.sub(tostring(fileSize / 1000000), 1, 4) .. "MB)" .. "\n"
     )
 end
+strings.sortIndex = function(sortByStr)
+    if sortByStr == "red" or sortByStr == "r" then
+        return 1     -- Red
+    elseif sortByStr == "green" or sortByStr == "gre" or sortByStr == "g" then
+        return 2     -- Green
+    elseif sortByStr == "blue" or sortByStr == "blu" or sortByStr == "b" then
+        return 3     -- Blue
+    elseif sortByStr == "alpha" or sortByStr == "alp" or sortByStr == "a" then
+        return 4     -- Alpha
+    elseif sortByStr == "lum" or sortByStr == "s" or sortByStr == "l" then
+        return 5     -- Luminance
+    elseif sortByStr == "hue" or sortByStr == "h" then
+        return 6     -- Hue
+    else
+        PCE.output(strings.invalidSortBy)
+    end
+end
 
-return outStrings
+return strings

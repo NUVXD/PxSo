@@ -1,5 +1,5 @@
 package.cpath = package.cpath .. ";./modules/?.dll"
-local nuvs = require("modules.NuvsModules")
+local nuvs = require("modules.nuvs")
 local sort = require("sort")
 local out = require("scripts.strings")
 print(sort.pixelSort())
@@ -38,24 +38,6 @@ local function writeFile(outputFileName, newPixels, width, height, info)
         nuvs.fileToName(filePath),
         out.fileInformationTxt(filePath, sortTolerance, sortBy, arg[5], arg[6], seamInvert, sortDirection, width, height, bpp, fileSize)
         )
-    end
-end
-
-local function sortIndex(sortByStr)
-    if sortByStr == "red" or sortByStr == "r" then
-        return 1     -- Red
-    elseif sortByStr == "green" or sortByStr == "gre" or sortByStr == "g" then
-        return 2     -- Green
-    elseif sortByStr == "blue" or sortByStr == "blu" or sortByStr == "b" then
-        return 3     -- Blue
-    elseif sortByStr == "alpha" or sortByStr == "alp" or sortByStr == "a" then
-        return 4     -- Alpha
-    elseif sortByStr == "lum" or sortByStr == "s" or sortByStr == "l" then
-        return 5     -- Luminance
-    elseif sortByStr == "hue" or sortByStr == "h" then
-        return 6     -- Hue
-    else
-        PCE.output(out.invalidSortBy)
     end
 end
 
@@ -106,24 +88,24 @@ local function pixelSort(fInfo, fSortTolerance, fSortBy, fRowChunks, fColChunks,
                     table.insert(sortedChunk, pixel)
                     if #sortedChunk == axisChunks then
                         if fSeamInvert then
-                            tComparator(sortedChunk, sortIndex(fSortBy), fSortTolerance, true)
+                            tComparator(sortedChunk, nuvs.sortIndex(fSortBy), fSortTolerance, true)
                             direction = -direction
                         else
-                            tComparator(sortedChunk, sortIndex(fSortBy), fSortTolerance, true)
+                            tComparator(sortedChunk, nuvs.sortIndex(fSortBy), fSortTolerance, true)
                         end
                         for _, px in ipairs(sortedChunk) do table.insert(sortedPixels, px) end
                         sortedChunk = {}
                     end
                 end
                 if #sortedChunk > 0 then
-                    tComparator(sortedChunk, sortIndex(fSortBy), fSortTolerance, true)
+                    tComparator(sortedChunk, nuvs.sortIndex(fSortBy), fSortTolerance, true)
                     for _, px in ipairs(sortedChunk) do table.insert(sortedPixels, px) end
                 end
             else
                 if fSeamInvert then
-                    tComparator(newAxisPixels, sortIndex(fSortBy), fSortTolerance, false)
+                    tComparator(newAxisPixels, nuvs.sortIndex(fSortBy), fSortTolerance, false)
                 else
-                    tComparator(newAxisPixels, sortIndex(fSortBy), fSortTolerance, true)
+                    tComparator(newAxisPixels, nuvs.sortIndex(fSortBy), fSortTolerance, true)
                 end
                 for _, px in ipairs(newAxisPixels) do table.insert(sortedPixels, px) end
             end
