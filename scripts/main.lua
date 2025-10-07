@@ -36,6 +36,7 @@ local function writeFile(outputFileName, newPixels, width, height, info)
         )
     end
 end
+
 local function sortIndex(sortByStr)
     if sortByStr == "red" or sortByStr == "r" then
         return 1     -- Red
@@ -53,8 +54,11 @@ local function sortIndex(sortByStr)
         PCE.output(out.invalidSortBy)
     end
 end
+
 local function pixelSort(fInfo, fSortTolerance, fSortBy, fRowChunks, fColChunks, fSeamInvert, fSortDirection)
+
     local newPixels = {}
+
     local function tComparator(sortingTable, sortIn, Tolerance, ascending)
         table.sort(sortingTable, function(a, b)
             local diff = math.abs(a[sortIn] - b[sortIn])
@@ -68,13 +72,15 @@ local function pixelSort(fInfo, fSortTolerance, fSortBy, fRowChunks, fColChunks,
             end
         end)
     end
+
     local function chooseAxis(way)
         if way == 0 then
             return height, width, fRowChunks
-        else
+        elseif way == 1 then
             return width, height, fColChunks
         end
     end
+
     local function sortAxis(way)
         local axisA, axisB, axisChunks = chooseAxis(way)
         for y = 1, axisA do
@@ -127,6 +133,7 @@ local function pixelSort(fInfo, fSortTolerance, fSortBy, fRowChunks, fColChunks,
             end
         end
     end
+
     if fSortDirection == 0 or fSortDirection == 1 then
         sortAxis(fSortDirection)
     elseif fSortDirection == 2 then
