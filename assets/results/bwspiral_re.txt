@@ -1,5 +1,5 @@
 > Information:
-Input file: originals/bwspiral.bmp
+Input file: assets/originals/bwspiral.bmp
 sortTolerance: 0
 sortBy: l
 rowChunks: 1

@@ -29,8 +29,8 @@ local seamInvert = booleanArg(arg[7], "SeamInvert")
 local sortDirection = tonumber(arg[8])
 
 local function writeFile(outputFileName, newPixels, width, height, info)
-    nuvs.BMP.writeBMP("results/"..outputFileName, newPixels, width, height, 24)
-    os.execute("ffmpeg -i results/"..outputFileName.." -compression_level 100 results/"..string.sub(outputFileName, 1, -4).."png -y -loglevel quiet")
+    nuvs.BMP.writeBMP("assets/results/"..outputFileName, newPixels, width, height, 24)
+    os.execute("ffmpeg -i assets/results/"..outputFileName.." -compression_level 100 assets/results/"..string.sub(outputFileName, 1, -4).."png -y -loglevel quiet")
     print("\n"..c.white.."> Successfully wrote file:"..c.reset.."\n"..c.green .."Name: "..c.white..outputFileName.."\n")
     if info == true then
         print(out.fileInformation(filePath, sortTolerance, sortBy, arg[5], arg[6], seamInvert, sortDirection, width, height, bpp, fileSize))
@@ -88,24 +88,24 @@ local function pixelSort(fInfo, fSortTolerance, fSortBy, fRowChunks, fColChunks,
                     table.insert(sortedChunk, pixel)
                     if #sortedChunk == axisChunks then
                         if fSeamInvert then
-                            tComparator(sortedChunk, nuvs.sortIndex(fSortBy), fSortTolerance, true)
+                            tComparator(sortedChunk, out.sortIndex(fSortBy), fSortTolerance, true)
                             direction = -direction
                         else
-                            tComparator(sortedChunk, nuvs.sortIndex(fSortBy), fSortTolerance, true)
+                            tComparator(sortedChunk, out.sortIndex(fSortBy), fSortTolerance, true)
                         end
                         for _, px in ipairs(sortedChunk) do table.insert(sortedPixels, px) end
                         sortedChunk = {}
                     end
                 end
                 if #sortedChunk > 0 then
-                    tComparator(sortedChunk, nuvs.sortIndex(fSortBy), fSortTolerance, true)
+                    tComparator(sortedChunk, out.sortIndex(fSortBy), fSortTolerance, true)
                     for _, px in ipairs(sortedChunk) do table.insert(sortedPixels, px) end
                 end
             else
                 if fSeamInvert then
-                    tComparator(newAxisPixels, nuvs.sortIndex(fSortBy), fSortTolerance, false)
+                    tComparator(newAxisPixels, out.sortIndex(fSortBy), fSortTolerance, false)
                 else
-                    tComparator(newAxisPixels, nuvs.sortIndex(fSortBy), fSortTolerance, true)
+                    tComparator(newAxisPixels, out.sortIndex(fSortBy), fSortTolerance, true)
                 end
                 for _, px in ipairs(newAxisPixels) do table.insert(sortedPixels, px) end
             end
