@@ -261,6 +261,10 @@ nuvs.BMP = { -- functions for reading and writing BMP files
             end
         end
         print("Wrote pixel_data.txt")
+    end,
+    AlgorithmInformation = function(fileName, information)
+        io.output("results/"..fileName.."_re.txt")
+        io.write(information)
     end
 }
 

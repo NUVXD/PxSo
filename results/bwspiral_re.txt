@@ -1,0 +1,11 @@
+> Information:
+Input file: originals/bwspiral.bmp
+sortTolerance: 0
+sortBy: l
+rowChunks: 1
+colChunks: 1
+seamInvert: true
+sortDirection: 2
+Image dimensions (WxH): 2000x1500
+Bits per pixel: 8
+File size: 3001078 bytes (3.00MB)

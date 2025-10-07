@@ -3,8 +3,6 @@ local out = require("scripts.outStrings")
 local c = nuvs.ConsoleColors
 local PCE = nuvs.PrettyConsoleErrors
 
---fix chunking
-
 local function booleanArg(argVal, argName)
     if (argVal == "true") then
         return true
@@ -18,54 +16,49 @@ end
 if #arg < 8 then PCE.output(out.invalidArguments) end
 local info = booleanArg(arg[1], "InfoBool")
 local filePath = arg[2]
+local pixels, width, height, bpp, fileSize = nuvs.BMP.decodeBMP(filePath)
 local sortTolerance = tonumber(arg[3])
 local sortBy = arg[4]
-local rowChunking = 100 / tonumber(arg[5])
-local colChunking = 100 / tonumber(arg[6])
+local rowChunks = math.max(1, math.floor(width  / math.max(1, tonumber(arg[5]))))
+local colChunks = math.max(1, math.floor(height / math.max(1, tonumber(arg[6]))))
 local seamInvert = booleanArg(arg[7], "SeamInvert")
 local sortDirection = tonumber(arg[8])
-local pixels, width, height, bpp, fileSize = nuvs.BMP.decodeBMP(filePath)
 
 local function writeFile(outputFileName, newPixels, width, height, info)
-    nuvs.BMP.writeBMP("results/" .. outputFileName, newPixels, width, height, 24)
-    os.execute("ffmpeg -i results/" ..
-        outputFileName ..
-        " -compression_level 100 results/" .. string.sub(outputFileName, 1, -4) .. "png -y -loglevel quiet")
-    print("\n" ..
-        c.white ..
-        "> Successfully wrote file:" .. c.reset .. "\n" .. c.green .. "Name: " .. c.white .. outputFileName .. "\n")
+    nuvs.BMP.writeBMP("results/"..outputFileName, newPixels, width, height, 24)
+    os.execute("ffmpeg -i results/"..outputFileName.." -compression_level 100 results/"..string.sub(outputFileName, 1, -4).."png -y -loglevel quiet")
+    print("\n"..c.white.."> Successfully wrote file:"..c.reset.."\n"..c.green .."Name: "..c.white..outputFileName.."\n")
     if info == true then
-        print(out.fileInformation(filePath, sortTolerance, sortBy, rowChunking, colChunking, seamInvert, sortDirection,
-            width, height, bpp, fileSize))
+        print(out.fileInformation(filePath, sortTolerance, sortBy, arg[5], arg[6], seamInvert, sortDirection, width, height, bpp, fileSize))
+        nuvs.BMP.AlgorithmInformation(
+        nuvs.fileToName(filePath),
+        out.fileInformationTxt(filePath, sortTolerance, sortBy, arg[5], arg[6], seamInvert, sortDirection, width, height, bpp, fileSize)
+        )
     end
 end
-
-local function pixelSort(info, sortTolerance, sortBy, rowChunking, colChunking, seamInvert, sortDirection)
-    local newPixels = {}
-    local lineLength = (sortDirection == 0) and width or height
-    local rowChunkPCT = math.floor((rowChunking / 100) * lineLength) -- lineLength / rowChunking
-    local colChunkPCT = math.floor((colChunking / 100) * lineLength) -- lineLength / colChunking
-    local function sortIndex(sortByStr)
-        if sortByStr == "red" or sortByStr == "r" then
-            return 1 -- Red
-        elseif sortByStr == "green" or sortByStr == "gre" or sortByStr == "g" then
-            return 2 -- Green
-        elseif sortByStr == "blue" or sortByStr == "blu" or sortByStr == "b" then
-            return 3 -- Blue
-        elseif sortByStr == "alpha" or sortByStr == "alp" or sortByStr == "a" then
-            return 4 -- Alpha
-        elseif sortByStr == "lum" or sortByStr == "s" or sortByStr == "l" then
-            return 5 -- Luminance
-        elseif sortByStr == "hue" or sortByStr == "h" then
-            return 6 -- Hue
-        else
-            PCE.output(out.invalidSortBy)
-        end
+local function sortIndex(sortByStr)
+    if sortByStr == "red" or sortByStr == "r" then
+        return 1     -- Red
+    elseif sortByStr == "green" or sortByStr == "gre" or sortByStr == "g" then
+        return 2     -- Green
+    elseif sortByStr == "blue" or sortByStr == "blu" or sortByStr == "b" then
+        return 3     -- Blue
+    elseif sortByStr == "alpha" or sortByStr == "alp" or sortByStr == "a" then
+        return 4     -- Alpha
+    elseif sortByStr == "lum" or sortByStr == "s" or sortByStr == "l" then
+        return 5     -- Luminance
+    elseif sortByStr == "hue" or sortByStr == "h" then
+        return 6     -- Hue
+    else
+        PCE.output(out.invalidSortBy)
     end
-    local function tComparator(sortingTable, sortIn, sortTolerance, ascending)
+end
+local function pixelSort(fInfo, fSortTolerance, fSortBy, fRowChunks, fColChunks, fSeamInvert, fSortDirection)
+    local newPixels = {}
+    local function tComparator(sortingTable, sortIn, Tolerance, ascending)
         table.sort(sortingTable, function(a, b)
             local diff = math.abs(a[sortIn] - b[sortIn])
-            if diff < sortTolerance then
+            if diff < Tolerance then
                 return a[7] < b[7]
             end
             if ascending then
@@ -75,15 +68,15 @@ local function pixelSort(info, sortTolerance, sortBy, rowChunking, colChunking, 
             end
         end)
     end
-    local function wayRe(way)
+    local function chooseAxis(way)
         if way == 0 then
-            return height, width
+            return height, width, fRowChunks
         else
-            return width, height
+            return width, height, fColChunks
         end
     end
     local function sortAxis(way)
-        local axisA, axisB = wayRe(way)
+        local axisA, axisB, axisChunks = chooseAxis(way)
         for y = 1, axisA do
             local newAxisPixels = {}
             for x = 1, axisB do
@@ -97,30 +90,30 @@ local function pixelSort(info, sortTolerance, sortBy, rowChunking, colChunking, 
             end
             local sortedPixels = {}
             local direction = 1
-            if #newAxisPixels > rowChunkPCT then
+            if #newAxisPixels > axisChunks then
                 local sortedChunk = {}
                 for _, pixel in ipairs(newAxisPixels) do
                     table.insert(sortedChunk, pixel)
-                    if #sortedChunk == rowChunkPCT then
-                        if seamInvert then
-                            tComparator(sortedChunk, sortIndex(sortBy), sortTolerance, direction == 1)
+                    if #sortedChunk == axisChunks then
+                        if fSeamInvert then
+                            tComparator(sortedChunk, sortIndex(fSortBy), fSortTolerance, true)
                             direction = -direction
                         else
-                            tComparator(sortedChunk, sortIndex(sortBy), sortTolerance, true)
+                            tComparator(sortedChunk, sortIndex(fSortBy), fSortTolerance, true)
                         end
                         for _, px in ipairs(sortedChunk) do table.insert(sortedPixels, px) end
                         sortedChunk = {}
                     end
                 end
                 if #sortedChunk > 0 then
-                    tComparator(sortedChunk, sortIndex(sortBy), sortTolerance, true)
+                    tComparator(sortedChunk, sortIndex(fSortBy), fSortTolerance, true)
                     for _, px in ipairs(sortedChunk) do table.insert(sortedPixels, px) end
                 end
             else
-                if seamInvert then
-                    tComparator(newAxisPixels, sortIndex(sortBy), sortTolerance, false)
+                if fSeamInvert then
+                    tComparator(newAxisPixels, sortIndex(fSortBy), fSortTolerance, false)
                 else
-                    tComparator(newAxisPixels, sortIndex(sortBy), sortTolerance, true)
+                    tComparator(newAxisPixels, sortIndex(fSortBy), fSortTolerance, true)
                 end
                 for _, px in ipairs(newAxisPixels) do table.insert(sortedPixels, px) end
             end
@@ -134,9 +127,9 @@ local function pixelSort(info, sortTolerance, sortBy, rowChunking, colChunking, 
             end
         end
     end
-    if sortDirection == 0 or sortDirection == 1 then
-        sortAxis(sortDirection)
-    elseif sortDirection == 2 then
+    if fSortDirection == 0 or fSortDirection == 1 then
+        sortAxis(fSortDirection)
+    elseif fSortDirection == 2 then
         sortAxis(0)
         local tempPixels = newPixels
         newPixels = {}
@@ -146,6 +139,6 @@ local function pixelSort(info, sortTolerance, sortBy, rowChunking, colChunking, 
         PCE.output(out.invalidSortDirection)
     end
     local outputFileName = nuvs.fileToName(filePath) .. "_re.bmp"
-    writeFile(outputFileName, newPixels, width, height, info)
+    writeFile(outputFileName, newPixels, width, height, fInfo)
 end
-pixelSort(info, sortTolerance, sortBy, rowChunking, colChunking, seamInvert, sortDirection)
+pixelSort(info, sortTolerance, sortBy, rowChunks, colChunks, seamInvert, sortDirection)
