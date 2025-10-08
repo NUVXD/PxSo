@@ -29,9 +29,13 @@ nuvs.PrettyConsoleErrors = { -- pretty console errors
     output = function(lines)
         local toOutput
         for _, line in ipairs(lines) do
-            local formattedLine = line[1]                 -- text string
-            if formattedLine == lines[1][1] then          -- if first line
-                formattedLine = "\n" .. formattedLine
+            local formattedLine = line[1]             -- text string
+            if formattedLine == lines[1][1] then      -- if first line
+                if formattedLine == lines[#lines][1] then -- if single line
+                    formattedLine = "\n" .. formattedLine .. "\n"
+                else
+                    formattedLine = "\n" .. formattedLine
+                end
             elseif formattedLine == lines[#lines][1] then -- if last line
                 formattedLine = formattedLine .. "\n"
             end
@@ -263,7 +267,7 @@ nuvs.BMP = { -- functions for reading and writing BMP files
         print("Wrote pixel_data.txt")
     end,
     AlgorithmInformation = function(fileName, information)
-        io.output("assets/results/"..fileName.."_re.txt")
+        io.output("assets/results/" .. fileName .. "_re.txt")
         io.write(information)
     end
 }

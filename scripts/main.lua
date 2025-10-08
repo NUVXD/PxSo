@@ -1,12 +1,14 @@
-package.cpath = package.cpath .. ";./modules/?.dll"
+--package.cpath = package.cpath .. ";./modules/?.dll"
 package.path = package.path .. ";./modules/?.lua"
 local nuvs = require("nuvs")
-local sort = require("sort")
 local out = require("strings")
-print(sort.pixelSort())
-
+--local sort = require("sort")
 local c = nuvs.ConsoleColors
 local PCE = nuvs.PrettyConsoleErrors
+
+if not string.find(_VERSION , "5.4") then
+    PCE.output(out.invalidVersion)
+end
 
 local function booleanArg(argVal, argName)
     if (argVal == "true") then
@@ -134,5 +136,6 @@ local function pixelSort(fInfo, fSortTolerance, fSortBy, fRowChunks, fColChunks,
     end
     local outputFileName = nuvs.fileToName(filePath) .. "_re.bmp"
     writeFile(outputFileName, newPixels, width, height, fInfo)
+    print("operation took "..os.clock().."s")
 end
 pixelSort(info, sortTolerance, sortBy, rowChunks, colChunks, seamInvert, sortDirection)

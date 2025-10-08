@@ -30,6 +30,10 @@ strings.invalidFile = { {
     "%sError: %sThe specified file could not be found or is not a valid BMP file%s",
     { c.red, c.white, c.reset }
 } }
+strings.invalidVersion = { {
+    "%sError: Lua version must be 5.4+%s",
+    { c.red, c.reset }
+} }
 ----------------------------------
 strings.fileInformation = function(filePath, sortTolerance, sortBy, rowChunks, colChunks, seamInvert,
                                       sortDirection, width, height, bpp, fileSize)
