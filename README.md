@@ -1,2 +1,2 @@
 # PxSo
-pixel sorter
+extremely expensive pixel sorter that works on millions of tables
