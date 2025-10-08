@@ -1,3 +1,3 @@
 # PxSo
--extremely expensive pixel sorter that works on millions of tables (you're welcome) \n
+-<b>extremely</b> expensive pixel sorter that works on millions of tables (you're welcome) <br>
 -requires ffmpeg
