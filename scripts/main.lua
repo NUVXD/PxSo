@@ -1,7 +1,8 @@
 package.cpath = package.cpath .. ";./modules/?.dll"
-local nuvs = require("modules.nuvs")
+package.path = package.path .. ";./modules/?.lua"
+local nuvs = require("nuvs")
 local sort = require("sort")
-local out = require("scripts.strings")
+local out = require("strings")
 print(sort.pixelSort())
 
 local c = nuvs.ConsoleColors

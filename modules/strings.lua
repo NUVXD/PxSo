@@ -1,4 +1,4 @@
-local nuvs = require("modules.nuvs")
+local nuvs = require("nuvs")
 local PCE = nuvs.PrettyConsoleErrors
 local c = nuvs.ConsoleColors
 local strings = {}
