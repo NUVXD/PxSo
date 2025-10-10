@@ -5,3 +5,4 @@ modules/sort.exp
 modules/sort.lib
 scripts/test.lua
 sort.obj
+devtests
